@@ -23,8 +23,9 @@ sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
 ./install.sh
 ```
 
-On GNOME + Wayland, **log out and back in once**, then click **Enable** in the app
-(or run `gnome-extensions enable activity-tracker@io.github.ritiksharma142001`).
+On GNOME, the installer (or the **Turn On** button in the app) installs the helper
+extension from extensions.gnome.org. GNOME asks you to confirm, and tracking starts
+right away with no logout.
 
 Command line: `activity-tracker --report` prints today's usage.
 
@@ -38,5 +39,11 @@ flatpak-builder --user --install --force-clean build io.github.ritiksharma142001
 flatpak run io.github.ritiksharma142001.ActivityTracker
 ```
 
-Flatpak apps can't install Shell extensions, so Flatpak users install the helper
-extension from extensions.gnome.org (upload it there first: `gnome-extensions pack extension/activity-tracker@io.github.ritiksharma142001`).
+The Flatpak's **Turn On** button installs the helper extension the same way.
+
+## Publishing the extension
+
+Build the upload file with
+`gnome-extensions pack extension/activity-tracker@io.github.ritiksharma142001`
+and upload it at https://extensions.gnome.org/upload/. Until it's approved, the
+installer falls back to a local copy that GNOME loads at the next login.

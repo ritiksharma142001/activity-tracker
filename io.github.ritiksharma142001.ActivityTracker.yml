@@ -13,6 +13,8 @@ finish-args:
   # Read the focused window from our Shell extension, and idle time from GNOME.
   - --talk-name=io.github.ActivityTracker.Shell
   - --talk-name=org.gnome.Mutter.IdleMonitor
+  # Install/enable the helper extension from extensions.gnome.org without a logout.
+  - --talk-name=org.gnome.Shell
 modules:
   - name: activity-tracker
     buildsystem: simple

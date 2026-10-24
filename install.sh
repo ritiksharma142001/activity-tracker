@@ -43,21 +43,32 @@ NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
 
-if [ "${XDG_CURRENT_DESKTOP:-}" != "${XDG_CURRENT_DESKTOP%GNOME*}" ]; then
-    EXT_DIR="$HOME/.local/share/gnome-shell/extensions/$EXT_UUID"
-    mkdir -p "$(dirname "$EXT_DIR")"
-    rm -rf "$EXT_DIR"
-    cp -r "$SRC/extension/$EXT_UUID" "$EXT_DIR"
+ext_active() { gnome-extensions info "$EXT_UUID" 2>/dev/null | grep -q "State: ACTIVE"; }
+
+if [ "${XDG_CURRENT_DESKTOP:-}" != "${XDG_CURRENT_DESKTOP%GNOME*}" ] && ! ext_active; then
     gnome-extensions enable "$EXT_UUID" 2>/dev/null || true
+    if ! ext_active; then
+        # Installing from extensions.gnome.org loads the extension right away (no logout).
+        echo "Installing the “Activity Tracker Helper” GNOME extension (confirm if GNOME asks)..."
+        gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell \
+            --method org.gnome.Shell.Extensions.InstallRemoteExtension "$EXT_UUID" >/dev/null 2>&1 || true
+    fi
+    if ! ext_active; then
+        # Not on extensions.gnome.org yet: install the local copy, which GNOME loads at next login.
+        EXT_DIR="$HOME/.local/share/gnome-shell/extensions/$EXT_UUID"
+        mkdir -p "$(dirname "$EXT_DIR")"
+        rm -rf "$EXT_DIR"
+        cp -r "$SRC/extension/$EXT_UUID" "$EXT_DIR"
+        NEEDS_LOGIN=1
+    fi
 fi
 
 update-desktop-database "$PREFIX/share/applications" 2>/dev/null || true
 gtk-update-icon-cache -f -t "$PREFIX/share/icons/hicolor" 2>/dev/null || true
 
 echo "Installed. Open “Activity Tracker” from your app menu."
-if [ -n "${EXT_DIR:-}" ] && ! gnome-extensions info "$EXT_UUID" 2>/dev/null | grep -q "State: ACTIVE"; then
+if [ -n "${NEEDS_LOGIN:-}" ]; then
     echo
-    echo "One more step (GNOME on Wayland): log out and back in, then run"
-    echo "  gnome-extensions enable $EXT_UUID"
-    echo "or click “Enable” in the app."
+    echo "The helper extension isn't on extensions.gnome.org yet, so GNOME loads it"
+    echo "at your next login. After that, click “Turn On” in the app."
 fi

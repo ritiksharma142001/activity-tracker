@@ -16,7 +16,8 @@ from .main import day_range, format_duration
 from .sources import EXT_UUID, SystemSource
 
 IN_FLATPAK = os.path.exists("/.flatpak-info")
-EXTENSION_URL = "https://extensions.gnome.org/"
+SHELL_EXTENSIONS = ("org.gnome.Shell", "/org/gnome/Shell",
+                    "org.gnome.Shell.Extensions")
 
 
 def ensure_daemon():
@@ -39,6 +40,43 @@ def request_flatpak_autostart():
     bus.call("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
              "org.freedesktop.portal.Background", "RequestBackground",
              GLib.Variant("(sa{sv})", ("", options)), None, Gio.DBusCallFlags.NONE, -1, None, None)
+
+
+def setup_extension(on_done):
+    """Turn on the helper extension without a logout.
+
+    If GNOME already has it loaded, just enable it. Otherwise ask GNOME to install it
+    from extensions.gnome.org, which loads it immediately after the user confirms.
+    on_done(ok, message) is called when finished.
+    """
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+
+    def call(method, finish):
+        bus.call(*SHELL_EXTENSIONS, method, GLib.Variant("(s)", (EXT_UUID,)), None,
+                 Gio.DBusCallFlags.NONE, GLib.MAXINT, None, finish)
+
+    def installed(_bus, res):
+        try:
+            result = bus.call_finish(res).unpack()[0]
+        except GLib.Error as err:
+            Gio.DBusError.strip_remote_error(err)
+            if "Not Found" in err.message:
+                on_done(False, "The helper isn't on extensions.gnome.org yet. Log out and back in once to load it.")
+            else:
+                on_done(False, f"Couldn't install the helper: {err.message}")
+            return
+        on_done(result == "successful", None if result == "successful" else "Installation cancelled")
+
+    def enabled(_bus, res):
+        try:
+            if bus.call_finish(res).unpack()[0]:
+                on_done(True, None)
+                return
+        except GLib.Error:
+            pass
+        call("InstallRemoteExtension", installed)
+
+    call("EnableExtension", enabled)
 
 
 def app_icon(app_id):
@@ -71,29 +109,31 @@ class MainWindow(Adw.ApplicationWindow):
         header.pack_start(self.next_btn)
 
         self.banner = Adw.Banner(
-            title="Window tracking is off. Log out and back in, then enable the "
-                  "“Activity Tracker Helper” extension.",
-            button_label="Enable",
+            title="Activity Tracker needs a small GNOME helper to see which app you're using.",
+            button_label="Turn On",
         )
         self.banner.connect("button-clicked", self.on_enable_extension)
 
         self.page_holder = Adw.Bin(vexpand=True)
+        self.toasts = Adw.ToastOverlay(child=self.page_holder)
 
         toolbar = Adw.ToolbarView()
         toolbar.add_top_bar(header)
         toolbar.add_top_bar(self.banner)
-        toolbar.set_content(self.page_holder)
+        toolbar.set_content(self.toasts)
         self.set_content(toolbar)
 
         self.refresh()
         GLib.timeout_add_seconds(30, self.on_tick)
 
     def on_enable_extension(self, _banner):
-        if IN_FLATPAK:
-            # The sandbox can't manage extensions; send the user to the extensions website.
-            Gtk.UriLauncher.new(EXTENSION_URL).launch(self, None, None)
-            return
-        subprocess.run(["gnome-extensions", "enable", EXT_UUID], check=False)
+        self.banner.set_sensitive(False)
+        setup_extension(self.on_extension_ready)
+
+    def on_extension_ready(self, ok, message):
+        self.banner.set_sensitive(True)
+        if message:
+            self.toasts.add_toast(Adw.Toast(title=message, timeout=6))
         GLib.timeout_add_seconds(1, lambda: self.refresh() and False)
 
     def on_tick(self):
