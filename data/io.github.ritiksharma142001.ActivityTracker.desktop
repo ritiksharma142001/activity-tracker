@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Activity Tracker
+Comment=See how much time you spend in each app
+Exec=activity-tracker
+Icon=io.github.ritiksharma142001.ActivityTracker
+Terminal=false
+Categories=Utility;GTK;
+Keywords=time;usage;productivity;screen time;
+StartupNotify=true

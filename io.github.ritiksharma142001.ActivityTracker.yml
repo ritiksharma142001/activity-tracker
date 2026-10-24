@@ -1,0 +1,34 @@
+# Flatpak manifest. Build and install locally with:
+#   flatpak-builder --user --install --force-clean build io.github.ritiksharma142001.ActivityTracker.yml
+app-id: io.github.ritiksharma142001.ActivityTracker
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+command: activity-tracker
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # Read the focused window from our Shell extension, and idle time from GNOME.
+  - --talk-name=io.github.ActivityTracker.Shell
+  - --talk-name=org.gnome.Mutter.IdleMonitor
+modules:
+  - name: activity-tracker
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/bin /app/lib/activity-tracker
+      - cp -r activity_tracker /app/lib/activity-tracker/
+      - |
+        cat > /app/bin/activity-tracker <<'EOF'
+        #!/bin/sh
+        export PYTHONPATH=/app/lib/activity-tracker
+        exec python3 -m activity_tracker "$@"
+        EOF
+      - chmod +x /app/bin/activity-tracker
+      - install -Dm644 data/${FLATPAK_ID}.desktop -t /app/share/applications
+      - install -Dm644 data/${FLATPAK_ID}.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 data/${FLATPAK_ID}.svg -t /app/share/icons/hicolor/scalable/apps
+    sources:
+      - type: dir
+        path: .

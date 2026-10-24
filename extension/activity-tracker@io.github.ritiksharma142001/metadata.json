@@ -1,0 +1,7 @@
+{
+  "uuid": "activity-tracker@io.github.ritiksharma142001",
+  "name": "Activity Tracker Helper",
+  "description": "Lets the Activity Tracker app see which window is focused, so it can record how long you use each app. Data never leaves your computer.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "url": "https://github.com/ritiksharma142001/activity-tracker"
+}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.ritiksharma142001.ActivityTracker</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Activity Tracker</name>
+  <summary>See how much time you spend in each app</summary>
+  <developer id="io.github.ritiksharma142001">
+    <name>Ritik Sharma</name>
+  </developer>
+  <description>
+    <p>
+      Activity Tracker records which app and window you are using, and shows
+      how your time was spent each day. Idle time and sleep are not counted.
+      All data stays on your computer in a local database.
+    </p>
+    <p>
+      On GNOME, it needs the small “Activity Tracker Helper” Shell extension
+      to see the focused window.
+    </p>
+  </description>
+  <launchable type="desktop-id">io.github.ritiksharma142001.ActivityTracker.desktop</launchable>
+  <url type="homepage">https://github.com/ritiksharma142001/activity-tracker</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-10-24"/>
+  </releases>
+</component>
